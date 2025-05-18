@@ -56,7 +56,8 @@ def add_https_domain(domain, upstream, port=HTTPS_PORT, template=None, replace=T
         servers[f"{port}"] = https_server
 
     routes: List[Dict] = https_server.get("routes", [])
-    expected_route = route_template(domain, upstream, disable_https=disable_https)
+    expected_route = route_template(
+        domain, upstream, disable_https=disable_https)
     exists = False
     for route in routes:
         for match in route.get("match", []):
@@ -82,7 +83,8 @@ def route_template(domain, upstream, disable_https=False):
                 "routes": [
                     {
                         "handle": [
-                            reverse_proxy_handle_template(upstream, disable_https=disable_https)
+                            reverse_proxy_handle_template(
+                                upstream, disable_https=disable_https)
                         ]
                     }
                 ]
@@ -111,6 +113,9 @@ def reverse_proxy_handle_template(upstream, disable_https=False, handle_id=None)
                     ],
                     "X-Real-Host": [
                         "{http.reverse_proxy.upstream.host}"
+                    ],
+                    "X-Custom-Host": [
+                        "{http.request.host}"
                     ],
                     "X-Real-Ip": [
                         "{http.reverse-proxy.upstream.address}"
