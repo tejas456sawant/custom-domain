@@ -1,6 +1,8 @@
 services:
   https:
-    image: sireto/custom-domain:latest
+    build:
+      context: .             # Path where your Dockerfile is located
+      dockerfile: Dockerfile  # Optional if file is named "Dockerfile"
     ports:
       - "80:80"
       - "443:443"
