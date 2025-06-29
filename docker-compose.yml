@@ -16,8 +16,6 @@ services:
     volumes:
       - https_domains:/app/domains
       - https_data:/root/.local/share
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
 
 volumes:
   https_data:

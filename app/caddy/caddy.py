@@ -22,7 +22,7 @@ DEFAULT_DOMAINS = [
 ]
 
 # Renderix upstream for default domains
-RENDERIX_UPSTREAM = "host.docker.internal:3001"
+RENDERIX_UPSTREAM = "localhost:3001"
 
 # Namecheap DNS configuration
 NAMECHEAP_API_KEY = ""

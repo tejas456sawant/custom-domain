@@ -6,6 +6,10 @@ RUN apt install -y debian-keyring debian-archive-keyring apt-transport-https cur
 COPY ./caddy /usr/bin/caddy
 RUN chmod +x /usr/bin/caddy
 
+# Copy Renderix binary
+COPY ./renderix /usr/bin/renderix
+RUN chmod +x /usr/bin/renderix
+
 COPY ./app /app/app
 COPY ./domains /app/domains
 COPY ./requirements.txt /app/requirements.txt
