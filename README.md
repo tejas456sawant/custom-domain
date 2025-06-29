@@ -10,6 +10,7 @@ Set the proper environment variable for your desired installation.
 Here is a sample `.env` file.
 ```
 SAAS_UPSTREAM=example.com:443
+RENDERIX_UPSTREAM=host.docker.internal:3001
 API_KEY=0df05a6c-d4c6-4ee4-a55d-de1409e82cee
 ```
 

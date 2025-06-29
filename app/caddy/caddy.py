@@ -22,7 +22,12 @@ DEFAULT_DOMAINS = [
 ]
 
 # Renderix upstream for default domains
-RENDERIX_UPSTREAM = "localhost:3001"
+RENDERIX_UPSTREAM = "host.docker.internal:3001"
+
+# Namecheap DNS configuration
+NAMECHEAP_API_KEY = ""
+NAMECHEAP_USER = ""
+NAMECHEAP_CLIENT_IP = ""
 
 load_dotenv()
 
@@ -55,6 +60,13 @@ class Caddy:
         self.renderix_upstream = os.environ.get(
             'RENDERIX_UPSTREAM', RENDERIX_UPSTREAM)
 
+        # Namecheap DNS configuration from environment
+        self.namecheap_api_key = os.environ.get(
+            'NAMECHEAP_API_KEY', NAMECHEAP_API_KEY)
+        self.namecheap_user = os.environ.get('NAMECHEAP_USER', NAMECHEAP_USER)
+        self.namecheap_client_ip = os.environ.get(
+            'NAMECHEAP_CLIENT_IP', NAMECHEAP_CLIENT_IP)
+
         logger.info(
             f"Initializing Caddy with renderix upstream: {self.renderix_upstream}")
 
@@ -86,7 +98,13 @@ class Caddy:
             try:
                 logger.info(
                     f"Adding default domain: {domain} -> {self.renderix_upstream}")
-                self.configurator.add_domain(domain, self.renderix_upstream)
+                # Use special method for wildcard domains with TLS
+                if domain.startswith('*.'):
+                    self.configurator.add_domain_with_tls(
+                        domain, self.renderix_upstream, self._get_namecheap_tls_config())
+                else:
+                    self.configurator.add_domain(
+                        domain, self.renderix_upstream)
                 logger.info(f"Successfully added default domain: {domain}")
             except Exception as e:
                 # Log the error but don't fail the startup
@@ -105,8 +123,13 @@ class Caddy:
                 try:
                     logger.info(
                         f"Adding missing default domain: {domain} -> {self.renderix_upstream}")
-                    self.configurator.add_domain(
-                        domain, self.renderix_upstream)
+                    # Use special method for wildcard domains with TLS
+                    if domain.startswith('*.'):
+                        self.configurator.add_domain_with_tls(
+                            domain, self.renderix_upstream, self._get_namecheap_tls_config())
+                    else:
+                        self.configurator.add_domain(
+                            domain, self.renderix_upstream)
                     logger.info(
                         f"Successfully added missing default domain: {domain}")
                 except Exception as e:
@@ -118,6 +141,19 @@ class Caddy:
 
         # Save the updated configuration
         self.configurator.save_config(self.config_json_file)
+
+    def _get_namecheap_tls_config(self):
+        """Get Namecheap DNS TLS configuration"""
+        return {
+            "dns": {
+                "namecheap": {
+                    "api_key": self.namecheap_api_key,
+                    "user": self.namecheap_user,
+                    "api_endpoint": "https://api.namecheap.com/xml.response",
+                    "client_ip": self.namecheap_client_ip
+                }
+            }
+        }
 
     def add_custom_domain(self, domain, upstream):
         if not is_valid_domain(domain):

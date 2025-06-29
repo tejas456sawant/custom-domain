@@ -75,6 +75,53 @@ def add_https_domain(domain, upstream, port=HTTPS_PORT, template=None, replace=T
     return template
 
 
+def add_https_domain_with_tls(domain, upstream, tls_config, port=HTTPS_PORT, template=None, replace=True, disable_https=False):
+    """Add domain with custom TLS configuration (for wildcard domains)"""
+    if not template or not isinstance(template, dict):
+        template = {}
+    else:
+        template = template.copy()
+
+    apps = template.get("apps", None)
+    if not apps:
+        apps = {}
+        template["apps"] = apps
+
+    http = apps.get("http", None)
+    if not http:
+        http = {}
+        apps["http"] = http
+
+    servers = http.get("servers", None)
+    if not servers:
+        servers = {}
+        http["servers"] = servers
+
+    https_server = servers.get(f"{port}", None)
+    if not https_server:
+        https_server = {"listen": [f":{port}"], "routes": []}
+        servers[f"{port}"] = https_server
+
+    routes: List[Dict] = https_server.get("routes", [])
+    expected_route = route_template_with_tls(
+        domain, upstream, tls_config, disable_https=disable_https)
+    exists = False
+    for route in routes:
+        for match in route.get("match", []):
+            if domain in match.get("host", []):
+                exists = True
+                if replace:
+                    # replace the handle with expected route handle
+                    route["handle"] = expected_route["handle"]
+                    break
+                raise DomainAlreadyExists(f"{domain} already exists")
+
+    if not exists:
+        routes.append(expected_route)
+
+    return template
+
+
 def route_template(domain, upstream, disable_https=False):
     return {
         "handle": [
@@ -97,6 +144,17 @@ def route_template(domain, upstream, disable_https=False):
         ],
         "terminal": True
     }
+
+
+def route_template_with_tls(domain, upstream, tls_config, disable_https=False):
+    """Route template with custom TLS configuration"""
+    route = route_template(domain, upstream, disable_https=disable_https)
+
+    # Add TLS configuration to the route
+    if not disable_https and tls_config:
+        route["tls"] = tls_config
+
+    return route
 
 
 def reverse_proxy_handle_template(upstream, disable_https=False, handle_id=None):

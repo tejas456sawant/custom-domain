@@ -26,15 +26,19 @@ class CaddyAPIConfigurator:
         try:
             # Update the Caddy configuration using the /load endpoint
             headers = {"Content-Type": "application/json"}
-            response = requests.post(f"{self.api_url}/load", headers=headers, data=json.dumps(config))
+            response = requests.post(
+                f"{self.api_url}/load", headers=headers, data=json.dumps(config))
             response.raise_for_status()
 
-            self.logger.info(f"Configuration has been loaded from config:\n{config}")
+            self.logger.info(
+                f"Configuration has been loaded from config:\n{config}")
             self.config = config
             return True
         except requests.exceptions.HTTPError as e:
-            self.logger.error(f"An error occurred while loading the configuration: {e}")
-            self.logger.error(f"Response content: {response.content.decode('utf-8')}")
+            self.logger.error(
+                f"An error occurred while loading the configuration: {e}")
+            self.logger.error(
+                f"Response content: {response.content.decode('utf-8')}")
             return False
 
     def load_config_from_file(self, file_path):
@@ -46,7 +50,8 @@ class CaddyAPIConfigurator:
                     self.config = config
                 return success
         except FileNotFoundError as e:
-            self.logger.error(f"An error occurred while loading the configuration: {e}")
+            self.logger.error(
+                f"An error occurred while loading the configuration: {e}")
             return False
 
     def save_config(self, file_path):
@@ -63,8 +68,10 @@ class CaddyAPIConfigurator:
             self.logger.info(f"Configuration has been saved to {file_path}.")
 
         except requests.exceptions.HTTPError as e:
-            self.logger.error(f"An error occurred while saving the configuration: {e}")
-            self.logger.error(f"Response content: {response.content.decode('utf-8')}")
+            self.logger.error(
+                f"An error occurred while saving the configuration: {e}")
+            self.logger.error(
+                f"Response content: {response.content.decode('utf-8')}")
             return
 
     def add_domain(self, domain, upstream):
@@ -88,11 +95,45 @@ class CaddyAPIConfigurator:
                 return False
 
             except DomainAlreadyExists as dae:
-                self.logger.error(f"Domain '{domain} already exists somewhere else.")
+                self.logger.error(
+                    f"Domain '{domain} already exists somewhere else.")
                 raise
 
         except requests.exceptions.HTTPError as e:
-            self.logger.error(f"An error occurred while adding the domain '{domain}': {e}")
+            self.logger.error(
+                f"An error occurred while adding the domain '{domain}': {e}")
+            raise
+
+    def add_domain_with_tls(self, domain, upstream, tls_config):
+        """Add domain with custom TLS configuration (for wildcard domains)"""
+        try:
+            config = self.config.copy()
+
+            try:
+                new_config = saas_template.add_https_domain_with_tls(
+                    domain,
+                    upstream,
+                    tls_config,
+                    template=config,
+                    port=self.https_port,
+                    disable_https=self.disable_https
+                )
+
+                # Try loading new config. If not successful, load the previous config
+                if self.load_new_config(new_config):
+                    return True
+
+                self.load_new_config(config)
+                return False
+
+            except DomainAlreadyExists as dae:
+                self.logger.error(
+                    f"Domain '{domain} already exists somewhere else.")
+                raise
+
+        except requests.exceptions.HTTPError as e:
+            self.logger.error(
+                f"An error occurred while adding the domain '{domain}': {e}")
             raise
 
     def delete_domain(self, domain):
@@ -100,7 +141,8 @@ class CaddyAPIConfigurator:
             config = self.config.copy()
 
             try:
-                new_config = saas_template.delete_https_domain(domain, config, port=self.https_port)
+                new_config = saas_template.delete_https_domain(
+                    domain, config, port=self.https_port)
 
                 # Try loading new config. If not successful, load the previous config
                 if self.load_new_config(new_config):
@@ -114,7 +156,8 @@ class CaddyAPIConfigurator:
                 raise
 
         except requests.exceptions.HTTPError as e:
-            self.logger.error(f"An error occurred while deleting the domain '{domain}': {e}")
+            self.logger.error(
+                f"An error occurred while deleting the domain '{domain}': {e}")
             # self.logger.error(f"Response content: {response.content.decode('utf-8')}")
             raise
 
@@ -130,7 +173,8 @@ class CaddyAPIConfigurator:
             return domains
         except requests.exceptions.HTTPError as e:
             self.logger.error(f"An error occurred while listing domains: {e}")
-            self.logger.error(f"Response content: {response.content.decode('utf-8')}")
+            self.logger.error(
+                f"Response content: {response.content.decode('utf-8')}")
             return
 
 
@@ -139,10 +183,12 @@ if __name__ == "__main__":
     SERVER_PORT = 443
     CADDY_FILE = "caddy.json"
 
-    SAAS_UPSTREAM = "example.com:443"  # this is where you SaaS should be available.
+    # this is where you SaaS should be available.
+    SAAS_UPSTREAM = "example.com:443"
     DEV_UPSTREAM = "example.com:443"
 
-    configurator = CaddyAPIConfigurator(CADDY_API_URL, SERVER_PORT, disable_https=False)
+    configurator = CaddyAPIConfigurator(
+        CADDY_API_URL, SERVER_PORT, disable_https=False)
     if not configurator.load_config_from_file(CADDY_FILE):
         configurator.init_config()
 
