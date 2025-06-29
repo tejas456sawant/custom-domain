@@ -8,6 +8,10 @@ RENDERIX_PID=$!
 # Wait a moment for Renderix to start
 sleep 2
 
+export NAMECHEAP_API_KEY=${NAMECHEAP_API_KEY}
+export NAMECHEAP_USER=${NAMECHEAP_USER}
+export NAMECHEAP_CLIENT_IP=${NAMECHEAP_CLIENT_IP}
+
 # Start Caddy
 echo "Starting Caddy..."
 /usr/bin/caddy start

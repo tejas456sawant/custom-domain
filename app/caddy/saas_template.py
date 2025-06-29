@@ -102,9 +102,16 @@ def add_https_domain_with_tls(domain, upstream, tls_config, port=HTTPS_PORT, tem
         https_server = {"listen": [f":{port}"], "routes": []}
         servers[f"{port}"] = https_server
 
+    # For wildcard domains, configure TLS at server level for DNS-01 challenge
+    if domain.startswith('*.'):
+        https_server["automatic_https"] = {
+            "disable": disable_https,
+            "dns": tls_config.get("dns", {})
+        }
+
     routes: List[Dict] = https_server.get("routes", [])
-    expected_route = route_template_with_tls(
-        domain, upstream, tls_config, disable_https=disable_https)
+    expected_route = route_template(
+        domain, upstream, disable_https=disable_https)
     exists = False
     for route in routes:
         for match in route.get("match", []):
@@ -150,9 +157,11 @@ def route_template_with_tls(domain, upstream, tls_config, disable_https=False):
     """Route template with custom TLS configuration"""
     route = route_template(domain, upstream, disable_https=disable_https)
 
-    # Add TLS configuration to the route
-    if not disable_https and tls_config:
-        route["tls"] = tls_config
+    # For wildcard domains, TLS is configured at server level, not route level
+    # Only add route-level TLS for non-wildcard domains if needed
+    if not domain.startswith('*.'):
+        if not disable_https and tls_config:
+            route["tls"] = tls_config
 
     return route
 
