@@ -17,8 +17,8 @@ DEFAULT_LOCAL_PORT = f"{HTTPS_PORT}"
 
 # Default domains to configure on startup
 DEFAULT_DOMAINS = [
-    "*.bytesites.ai",
-    "cname.bytesites.ai"
+    "*.bytesites.xyz",
+    "cname.bytesites.xyz"
 ]
 
 # Renderix upstream for default domains
